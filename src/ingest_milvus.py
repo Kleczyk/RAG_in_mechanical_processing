@@ -2,7 +2,6 @@ import os
 import base64
 import glob
 
-import torch
 from dotenv import load_dotenv
 from pymilvus import (
     connections,
