@@ -130,6 +130,6 @@ def clear_collection():
 
 # ─── ENTRYPOINT ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    # reset_schema()
+    reset_schema()
     ingest_data()
     # clear_collection()

@@ -29,18 +29,19 @@ def build_interface() -> gr.Blocks:
                 process_btn = gr.Button("Process")
 
             with gr.Column(scale=2):
+                gpt_response_md = gr.Markdown(
+                    label="GPT-3-mini Vision Output",
+
+                )
                 csv_output_box = gr.Textbox(
                     label="Retrieved CSV Tables",
                     lines=10
-                )
-                gpt_response_md = gr.Markdown(
-                    label="GPT-4 Vision Output"
                 )
 
         process_btn.click(
             fn=process_image,
             inputs=[upload_input, select_input],
-            outputs=[csv_output_box, gpt_response_md]
+            outputs=[gpt_response_md, csv_output_box]
         )
 
     return demo

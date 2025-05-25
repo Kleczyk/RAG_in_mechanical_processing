@@ -162,11 +162,14 @@ def process_image(
         # Call GPT-4 Vision
         response = openai_client.chat.completions.create(
             model=MODEL_NAME,
+            temperature=0,
+            top_p=0,
+            seed=12345,
             messages=messages
         )
         gpt_output = response.choices[0].message.content
 
-        return csv_output, gpt_output
+        return gpt_output, csv_output
 
     except MilvusException as me:
         logging.error("Milvus error: %s", me)
