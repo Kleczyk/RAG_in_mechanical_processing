@@ -1,0 +1,22 @@
+0010044820250,,
+"NR ZAMÓWIENIA
+24005647/1",,
+OP,"NR
+STAN.",TREŚĆ OPERACJI
+1,B1,Projektowanie CAD/CAM
+2,F3,"0. Cięcie materiału
+1. Planowanie
+2. Frezowanie konturu zewnętrznego
+3. Frezowanie półki
+4. Frezowanie skosów frezem z zaokrągloną krawędzią skrawającą R1
+5. Frezowanie kieszeni"
+3,F4,"1. Planowanie druga strona
+2. Frezowanie wybrania pod drut frezem Fi3
+3. Frezowanie faz
+4. likwidacja zaokrąglenia po frezie
+5. Zatępić ostre krawędzie"
+4,P1,"1.Hartowanie/Odpuszczanie
+- twardość 60-62HRC
+- material NC11"
+5,S2,"1. Szlifowanie płaszczyzn
+- wymiar L=15(-0.02/-0.04)"

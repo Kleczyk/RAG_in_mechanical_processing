@@ -1,0 +1,28 @@
+0010063120256,,
+"NR ZAMÓWIENIA
+25000379/4",,
+OP,"NR
+STAN.",TREŚĆ OPERACJI
+1,B1,Projektowanie CAD/CAM
+2,T3,"0. Cięcie materiału
+ZAMOCOWANIE 1
+1. Planowanie
+2. Toczenie zewnętrzne na gotowo
+- wymiar Fi16(0/-0.02)
+3. Nawiercanie
+4. Wiercenie pod wytaczak
+5. Wytaczanie pod szlif
+- wymiar Fi12(-0.3/-0.2)
+6. Odcinanie z naddatkiem na planowanie 0.3mm
+ZAMOCOWANIE 2
+1. Planowanie
+- wymiar L=15(+0.1/-0.1)
+2. Wytaczanie otworu na gotowo
+- wymiar Fi7.95(+0.02/0)
+TRZYMAĆ SIĘ DOLNYCH TOLERANCJI"
+3,P1,"1. Hartowanie/Odpuszczanie
+- twardość 54-56HRC
+- materiał NC11"
+4,S7,"1. Szlifowanie otworów
+- wymiar Fi12(0/-0.02)"
+5,I3,1. Polerowanie otworu Fi7.95

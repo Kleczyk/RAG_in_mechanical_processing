@@ -1,0 +1,30 @@
+0010040920251,,
+"NR ZAMÓWIENIA
+25000433/12",,
+OP,"NR
+STAN.",TREŚĆ OPERACJI
+1,B1,Projektowanie CAD/CAM
+2,T3,"0. Cięcie materiału
+1. Planowanie
+2. Toczenie zewnętrzne pod szlif
+- wymiar Fi35(+0.3/+0.2)
+3. Nawiercanie
+4. Wiercenie pod wytaczak
+5. Wytaczanie pod szlif
+- wymiar Fi30(-(0.3/-0.2)
+6. Wytaczanie otworu pod szlif
+- wymiar Fi22(-0.3/-0.2), kąt 12 stopni
+6. Wytaczanie podcięcia
+- wymiar L=10(+0.2/-0.2)
+7. Wytaczanie gwintu M32x1.5"
+3,P1,"1. Hartowanie/Odpuszczanie
+- twardość 46-49HRC
+- materiał: WCLV"
+4,S4,"1. Szlifowanie wałków bezkł.
+- wymiar Fi35(-0.02/-0.04)"
+5,S7,"1. Szlifowanie otworów
+- wymiar Fi30(+0.01/+0.03)
+- wymiar Fi22(-0.01/+0.01), kąt 12 stopni"
+6,F4,1. Frezowanie wybrania
+7,S8,1. Szlifowanie odpowietrzenia
+8,D3,1. Przebijanie odpowetrzenia Fi2

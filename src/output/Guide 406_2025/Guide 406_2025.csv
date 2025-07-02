@@ -1,0 +1,22 @@
+0010040620250,,
+"NR ZAMÓWIENIA
+25000433/12",,
+OP,"NR
+STAN.",TREŚĆ OPERACJI
+1,B1,Projektowanie CAD/CAM
+2,T3,"Pierwsza strona
+1. Cięcie materiału
+2. Toczenie CNC na gotowo
+- wymiar Fi14(0/-0.015)
+- wymiar Fi3.47(+0.02/0)
+- wymiar Fi3.44+0.01/0)
+3. Odcinanie z naddatkiem na planowanie"
+3,T3,"Druga strona
+1. Toczenie CNC na gotowo,
+- wymiar Fi3.8(+0.1/0)
+2. Planowanie CNC na wymiar L=15.9(+0.02/-0.02)"
+4,P1,"1. Hartowanie/Odpuszczanie
+- Materiał: NC11LV
+- Twardość ~60HRC"
+5,I3,1. Polerowanie gniazda
+6,S6,1. Nacinanie wybrań 5 stopni L=8
