@@ -1,52 +1,52 @@
-#!/usr/bin/env python3
-"""
-Gradio interface for the machining RAG pipeline defined in chain_process.py.
-"""
+# File: app.py
+import os
 import gradio as gr
-from proces_chain import process_image, list_sample_images, SAMPLE_IMAGES_FOLDER
+from proces_chain import list_sample_images, process_image, followup_plan, SAMPLE_FOLDER
 
 
-def build_interface() -> gr.Blocks:
-    """
-    Construct and return the Gradio Blocks UI.
-    """
-    sample_images = list_sample_images(SAMPLE_IMAGES_FOLDER)
+def start_convo(upload, sample, history):
+    csv_str, initial = process_image(upload, sample)
+    history = history or []
+    history.append(('Assistant', initial))
+    return history, history
 
+
+def chat_turn(msg, history):
+    history = history or []
+    history.append((msg, None))
+    initial = history[0][1]
+    updated = followup_plan(initial, msg)
+    history[-1] = (msg, updated)
+    return history, history
+
+
+def build_interface():
+    samples = list_sample_images()
     with gr.Blocks() as demo:
-        gr.Markdown("## Machining RAG Pipeline")
+        gr.Markdown('## Machining RAG Chat')
         with gr.Row():
             with gr.Column(scale=1):
-                upload_input = gr.Image(
-                    type="filepath",
-                    label="Upload Image"
+                upload = gr.Image(type='filepath', label='Upload Image')
+                sample = gr.Dropdown([''] + samples, label='Or choose sample')
+                # Preview of selected sample
+                sample_preview = gr.Image(type='filepath', label='Sample Preview')
+                # Update preview when dropdown changes
+                sample.change(
+                    fn=lambda fn: os.path.join(SAMPLE_FOLDER, fn) if fn else None,
+                    inputs=[sample],
+                    outputs=[sample_preview]
                 )
-                select_input = gr.Dropdown(
-                    choices=[""] + sample_images,
-                    value="",
-                    label="Select Sample Image",
-                    interactive=True
-                )
-                process_btn = gr.Button("Process")
-
+                start = gr.Button('Start Chat')
+                msg_in = gr.Textbox(placeholder='Adjust the plan...', label='Your message')
+                send = gr.Button('Send')
             with gr.Column(scale=2):
-                gpt_response_md = gr.Markdown(
-                    label="GPT-3-mini Vision Output",
+                chat = gr.Chatbot()
+            state = gr.State([])
 
-                )
-                csv_output_box = gr.Textbox(
-                    label="Retrieved CSV Tables",
-                    lines=10
-                )
-
-        process_btn.click(
-            fn=process_image,
-            inputs=[upload_input, select_input],
-            outputs=[gpt_response_md, csv_output_box]
-        )
-
+        start.click(start_convo, inputs=[upload, sample, state], outputs=[chat, state])
+        send.click(chat_turn, inputs=[msg_in, state], outputs=[chat, state])
     return demo
 
+if __name__ == '__main__':
+    build_interface().launch(share=True)
 
-if __name__ == "__main__":
-    interface = build_interface()
-    interface.launch(share=True)
