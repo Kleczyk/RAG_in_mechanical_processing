@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""
-Core processing pipeline: embedding, Milvus search, and GPT-4 Vision invocation.
-"""
+# File: pipeline.py
 import os
 import glob
 import base64
@@ -16,167 +13,115 @@ from pymilvus import connections, Collection, MilvusException
 from openai import OpenAI, OpenAIError
 
 # Load environment variables
-load_dotenv()
-MILVUS_HOST: str = os.getenv("MILVUS_HOST", "localhost")
-MILVUS_PORT: str = os.getenv("MILVUS_PORT", "19530")
-COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "items")
-TOP_K: int = int(os.getenv("TOP_K", "3"))
-MODEL_NAME: str = os.getenv("MODEL_NAME", "gpt-4.1-2025-04-14")
-API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
-SAMPLE_IMAGES_FOLDER: str = os.getenv(
-    "SAMPLE_IMAGES_FOLDER", os.path.expanduser("/home/daniel/repos/RAG_in_mechanical_processing/src/data/test/pdf2png")
+dotenv_path = os.getenv('.env', '.env')
+load_dotenv(dotenv_path)
+MILVUS_HOST = os.getenv('MILVUS_HOST', 'localhost')
+MILVUS_PORT = os.getenv('MILVUS_PORT', '19530')
+COLLECTION_NAME = os.getenv('COLLECTION_NAME', 'items')
+TOP_K = int(os.getenv('TOP_K', '3'))
+MODEL_NAME = os.getenv('MODEL_NAME', 'gpt-4.1-2025-04-14')
+API_KEY = os.getenv('OPENAI_API_KEY')
+SAMPLE_FOLDER = os.getenv(
+    'SAMPLE_IMAGES_FOLDER',
+    os.path.expanduser('~/repos/RAG_in_mechanical_processing/src/data/test/pdf2png')
 )
 
 if not API_KEY:
-    logging.error("OPENAI_API_KEY is not set.")
-    raise EnvironmentError("Missing OPENAI_API_KEY environment variable.")
+    logging.error('OPENAI_API_KEY is not set.')
+    raise EnvironmentError('Missing OPENAI_API_KEY')
 
 # Initialize clients
 openai_client = OpenAI(api_key=API_KEY)
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+processor = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
+clip_model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32')
 clip_model.eval()
 
 
-def embed_image(image_path: str) -> List[float]:
-    """
-    Compute a normalized CLIP embedding for the given image.
+def list_sample_images(folder: str = SAMPLE_FOLDER) -> List[str]:
+    patterns = ['*.png', '*.jpg', '*.jpeg']
+    files = []
+    for pat in patterns:
+        files.extend(glob.glob(os.path.join(folder, pat)))
+    return sorted(os.path.basename(f) for f in files)
 
-    Args:
-        image_path: Path to the image file.
 
-    Returns:
-        A list of floats representing the normalized feature vector.
-    """
-    image = Image.open(image_path).convert("RGB")
-    inputs = processor(images=image, return_tensors="pt")
+def embed_image(path: str) -> List[float]:
+    img = Image.open(path).convert('RGB')
+    inputs = processor(images=img, return_tensors='pt')
     with torch.no_grad():
-        features = clip_model.get_image_features(**inputs)
-    normalized = features / features.norm(p=2, dim=-1, keepdim=True)
-    return normalized[0].tolist()
+        feats = clip_model.get_image_features(**inputs)
+    norm = feats / feats.norm(p=2, dim=-1, keepdim=True)
+    return norm[0].tolist()
 
 
 def image_to_data_uri(path: str) -> str:
-    """
-    Convert an image file to a Base64-encoded data URI.
-
-    Args:
-        path: Local path to the image file.
-
-    Returns:
-        A data URI string for embedding in prompts.
-    """
-    with open(path, "rb") as f:
-        data = base64.b64encode(f.read()).decode("utf-8")
-    return f"data:image/png;base64,{data}"
+    with open(path, 'rb') as f:
+        b64 = base64.b64encode(f.read()).decode()
+    return f'data:image/png;base64,{b64}'
 
 
-def list_sample_images(folder: str = SAMPLE_IMAGES_FOLDER) -> List[str]:
-    """
-    List supported sample images in the given folder.
-
-    Args:
-        folder: Directory containing sample images.
-
-    Returns:
-        Sorted list of image filenames.
-    """
-    patterns = ["*.png", "*.jpg", "*.jpeg"]
-    files: List[str] = []
-    for pattern in patterns:
-        files.extend(glob.glob(os.path.join(folder, pattern)))
-    return sorted(os.path.basename(p) for p in files)
-
-
-def process_image(
-    uploaded_path: Optional[str],
-    selected_filename: Optional[str]
-) -> Tuple[str, str]:
-    """
-    Execute the processing pipeline on an input image.
-
-    Steps:
-      1. Determine image source (upload vs sample).
-      2. Embed image via CLIP.
-      3. Query Milvus for top-K similar vectors.
-      4. Extract CSV tables from hits.
-      5. Build GPT-4 Vision prompt and call API.
-
-    Args:
-        uploaded_path: Filepath of the uploaded image.
-        selected_filename: Sample image filename if selected.
-
-    Returns:
-        Tuple of (retrieved CSV tables, GPT-4 Vision response).
-    """
-    # Select image path
-    if selected_filename:
-        image_path = os.path.join(SAMPLE_IMAGES_FOLDER, selected_filename)
-    elif uploaded_path:
-        image_path = uploaded_path
+def process_image(path: Optional[str], sample: Optional[str]) -> Tuple[str, str]:
+    if sample:
+        img_path = os.path.join(SAMPLE_FOLDER, sample)
+    elif path:
+        img_path = path
     else:
-        return "No input image provided.", ""
-
+        return 'No image provided.', ''
     try:
-        # Embed image
-        query_vector = embed_image(image_path)
-
-        # Connect to Milvus and search
-        connections.connect(alias="default", host=MILVUS_HOST, port=MILVUS_PORT)
-        collection = Collection(COLLECTION_NAME)
-        collection.load()
-        params = {"metric_type": "L2", "params": {"nprobe": 10}}
-        results = collection.search(
-            data=[query_vector],
-            anns_field="image_vector",
-            param=params,
-            limit=TOP_K,
-            output_fields=["csv_data", "image_path"]
+        vec = embed_image(img_path)
+        connections.connect(alias='default', host=MILVUS_HOST, port=MILVUS_PORT)
+        col = Collection(COLLECTION_NAME)
+        col.load()
+        params = {'metric_type': 'L2', 'params': {'nprobe': 10}}
+        res = col.search(
+            data=[vec], anns_field='image_vector', param=params,
+            limit=TOP_K, output_fields=['csv_data']
         )
-        hits = results[0]
-
-        # Extract CSV data
-        tables = [hit.entity.get("csv_data", "") for hit in hits]
-        csv_output = "\n\n".join(tables) if tables else "No CSV data found."
-
-        # Build GPT prompt
+        tables = [hit.entity.get('csv_data', '') for hit in res[0]]
+        csv_str = '\n\n'.join(tables) or 'No CSV data.'
+        # Invoke GPT-Vision
         prompt = (
-            "### Context\n"
-            "Below are reference CSV tables describing machining parameters for similar parts:\n"
-            f"{csv_output}\n\n"
-            "### Task\n"
-            "Propose a sequence of machining steps for the uploaded part,"
-            " including actual dimensions from the drawing,"
-            " formatted as a table: | Operation | Status Number | Description |."
+            '### Context\n'
+            'Reference CSV tables for similar parts:\n'
+            f'{csv_str}\n\n'
+            '### Task\n'
+            'Propose machining steps with dimensions in a Markdown table.'
         )
-        data_uri = image_to_data_uri(image_path)
-        user_segments = [
-            {"type": "text", "text": prompt},
-            {"type": "image_url", "image_url": {"url": data_uri}}
-        ]
+        data_uri = image_to_data_uri(img_path)
         messages = [
-            {"role": "system", "content": "You are an expert in metal part machining."},
-            {"role": "user", "content": user_segments}
+            {'role': 'system', 'content': 'Expert in metal machining.'},
+            {'role': 'user', 'content': [
+                {'type': 'text', 'text': prompt},
+                {'type': 'image_url', 'image_url': {'url': data_uri}}
+            ]}
         ]
-
-        # Call GPT-4 Vision
-        response = openai_client.chat.completions.create(
-            model=MODEL_NAME,
-            temperature=0,
-            top_p=0,
-            seed=12345,
+        resp = openai_client.chat.completions.create(
+            model=MODEL_NAME, temperature=0, top_p=0,
             messages=messages
         )
-        gpt_output = response.choices[0].message.content
+        return csv_str, resp.choices[0].message.content
+    except (MilvusException, OpenAIError) as e:
+        logging.error(e)
+        return '', f'Error: {e}'
 
-        return gpt_output, csv_output
 
-    except MilvusException as me:
-        logging.error("Milvus error: %s", me)
-        return "Error querying Milvus.", str(me)
-    except OpenAIError as oe:
-        logging.error("OpenAI API error: %s", oe)
-        return csv_output if 'csv_output' in locals() else "", f"API error: {oe}"
-    except Exception as e:
-        logging.exception("Unexpected error during processing.")
-        return "", f"Unexpected error: {e}"
+def followup_plan(initial_plan: str, user_msg: str) -> str:
+    """
+    Generate a follow-up updated plan based on the initial GPT output.
+    """
+    prompt = (
+        'Based on the initial plan and CSV context below:\n'
+        f'{initial_plan}\n'
+        'User adjustment:\n'
+        f'{user_msg}\n'
+        'Provide an updated Markdown table of operations.'
+    )
+    resp = openai_client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {'role': 'system', 'content': 'Expert in metal machining.'},
+            {'role': 'user', 'content': prompt}
+        ],
+        temperature=0
+    )
+    return resp.choices[0].message.content
