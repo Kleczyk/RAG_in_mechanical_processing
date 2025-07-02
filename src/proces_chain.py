@@ -23,7 +23,7 @@ MODEL_NAME = os.getenv('MODEL_NAME', 'gpt-4.1-2025-04-14')
 API_KEY = os.getenv('OPENAI_API_KEY')
 SAMPLE_FOLDER = os.getenv(
     'SAMPLE_IMAGES_FOLDER',
-    os.path.expanduser('~/repos/RAG_in_mechanical_processing/src/data/test/pdf2png')
+    os.path.expanduser('data/test/pdf2png')
 )
 
 if not API_KEY:

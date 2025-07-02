@@ -1,5 +1,7 @@
+# File: app.py
+import os
 import gradio as gr
-from proces_chain import list_sample_images, process_image, followup_plan
+from proces_chain import list_sample_images, process_image, followup_plan, SAMPLE_FOLDER
 
 
 def start_convo(upload, sample, history):
@@ -26,6 +28,14 @@ def build_interface():
             with gr.Column(scale=1):
                 upload = gr.Image(type='filepath', label='Upload Image')
                 sample = gr.Dropdown([''] + samples, label='Or choose sample')
+                # Preview of selected sample
+                sample_preview = gr.Image(type='filepath', label='Sample Preview')
+                # Update preview when dropdown changes
+                sample.change(
+                    fn=lambda fn: os.path.join(SAMPLE_FOLDER, fn) if fn else None,
+                    inputs=[sample],
+                    outputs=[sample_preview]
+                )
                 start = gr.Button('Start Chat')
                 msg_in = gr.Textbox(placeholder='Adjust the plan...', label='Your message')
                 send = gr.Button('Send')
@@ -38,4 +48,5 @@ def build_interface():
     return demo
 
 if __name__ == '__main__':
-    build_interface().launch()
+    build_interface().launch(share=True)
+
