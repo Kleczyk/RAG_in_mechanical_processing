@@ -31,7 +31,7 @@ from PIL import Image
 load_dotenv()  # ładuje .env z CWD
 MILVUS_HOST    = os.getenv("MILVUS_HOST", "localhost")
 MILVUS_PORT    = os.getenv("MILVUS_PORT", "19530")
-BASE_PATH      = os.getenv("BASE_PATH", "/home/daniel/repos/RAG_in_mechanical_processing/src/output")
+BASE_PATH      = os.getenv("BASE_PATH", "output")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "items")
 
 # ─── INIT MILVUS ───────────────────────────────────────────────────────────────
